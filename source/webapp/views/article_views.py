@@ -104,6 +104,32 @@ class ArticleUpdateView(UpdateView):
     def get_success_url(self):
         return reverse('article_view', kwargs={'pk': self.object.pk})
 
+    def form_valid(self, form):
+        self.object = form.save()
+        self.get_form()
+        self.empty_tag()
+        return redirect(self.get_success_url())
+
+    def add_tags(self):
+        tags = self.request.POST.get('tags').split(',')
+        for tag in tags:
+            tag, _ = Tag.objects.get_or_create(name=tag)
+            self.object.tags.add(tag)
+
+    def empty_tag(self):
+        string = self.object.tags.clear()
+        self.add_tags()
+        return string
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class=None)
+        tags = list(self.object.tags.all().values('name'))
+        tags_string = ''
+        for tag in tags:
+            tags_string += tag['name'] + ','
+        form.fields['tags'].initial = tags_string
+        return form
+
 
 class ArticleDeleteView(DeleteView):
     model = Article
