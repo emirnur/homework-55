@@ -21,6 +21,7 @@ class IndexView(ListView):
     def get(self, request, *args, **kwargs):
         self.form = self.get_search_form()
         self.search_value = self.get_search_value()
+
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
@@ -29,6 +30,7 @@ class IndexView(ListView):
             queryset = queryset.filter(
                 Q(title__icontains=self.search_value)
                 | Q(author__icontains=self.search_value)
+                | Q(tags__name__iexact=self.search_value)
             )
         return queryset
 
@@ -86,10 +88,12 @@ class ArticleCreateView(CreateView):
     def form_valid(self, form):
         self.object = form.save()
         self.add_tags()
+        print(self.object.tags.name())
         return redirect(self.get_success_url())
 
     def add_tags(self):
         tags = self.request.POST.get('tags').split(',')
+        print(tags)
         for tag in tags:
             tag, _ = Tag.objects.get_or_create(name=tag)
             self.object.tags.add(tag)
